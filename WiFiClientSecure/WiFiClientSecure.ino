@@ -2,6 +2,7 @@
 
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h> // version 5 is required, some refactor needed for version 6
+#include "FastLED.h"
 
 const char* ssid     = "*********";     // your network SSID (name of wifi network)
 const char* password = "*********"; // your network password
@@ -23,11 +24,34 @@ bool errorState = true;
 bool newOrders = false;
 long lastSuccessfulCheck = millis();
 
+TaskHandle_t LEDTask;
+
+#define DATA_PIN    12
+#define LED_TYPE    WS2811
+#define COLOR_ORDER GRB
+#define NUM_LEDS    12
+CRGB leds[NUM_LEDS];
+#define BRIGHTNESS          10
+#define FRAMES_PER_SECOND  120
+uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+
 void setup() {
   //Initialize serial and wait for port to open:
   Serial.begin(115200);
   delay(100);
   Serial.println();
+
+  FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(BRIGHTNESS);
+
+  xTaskCreatePinnedToCore(
+      LEDTaskcode, /* Function to implement the task */
+      "LEDTask", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      0,  /* Priority of the task */
+      &LEDTask,  /* Task handle. */
+      0); /* Core where the task should run */
 }
 
 void loop() {
@@ -133,4 +157,33 @@ void handleResponse() {
 void disconnectWifi() {
   WiFi.disconnect();
   Serial.println("Wifi disconnected.");
+}
+
+void LEDTaskcode (void * parameter) {
+  // wait a bit before starting
+  fill_solid(leds, NUM_LEDS, CRGB::Black);
+  FastLED.show();
+  delay(2000);
+  
+  for(;;) {
+    if (errorState) { // a red dot sweeping around, with fading trails
+      fadeToBlackBy(leds, NUM_LEDS, 20);
+      uint16_t beatsaw = beat16( 30 /* BPM */);
+      int pos = scale16( beatsaw, NUM_LEDS-1);
+      leds[pos] += CRGB::Red;
+    }
+    else if (newOrders) { // random colored speckles that blink in and fade smoothly
+      fadeToBlackBy(leds, NUM_LEDS, 10);
+      int pos = random16(NUM_LEDS);
+      if(random8(2) == 0) leds[pos] += CHSV(gHue + random8(64), 200, 255);
+    }
+    else {
+      fadeToBlackBy(leds, NUM_LEDS, 10); // turn all the leds off
+    }
+    // send the 'leds' array out to the actual LED strip
+    FastLED.show();  
+    // insert a delay to keep the framerate modest
+    FastLED.delay(1000/FRAMES_PER_SECOND); 
+    EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
+  }
 }

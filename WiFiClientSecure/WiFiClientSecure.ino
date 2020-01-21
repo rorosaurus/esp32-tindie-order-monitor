@@ -7,11 +7,15 @@
 */
 
 #include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
 
-const char* ssid     = "IoT";     // your network SSID (name of wifi network)
-const char* password = "internetofshit"; // your network password
+const char* ssid     = "*********";     // your network SSID (name of wifi network)
+const char* password = "*********"; // your network password
 
-const char*  server = "www.howsmyssl.com";  // Server URL
+const char*  server = "www.tindie.com";  // Server URL
+
+String username = "************";
+String apiKey = "***********";
 
 // www.howsmyssl.com root certificate authority, to verify the server
 // change it to your server root CA
@@ -72,7 +76,7 @@ void setup() {
   Serial.print("Connected to ");
   Serial.println(ssid);
 
-  client.setCACert(test_root_ca);
+  //client.setCACert(test_root_ca);
   //client.setCertificate(test_client_key); // for client verification
   //client.setPrivateKey(test_client_cert);	// for client verification
 
@@ -82,8 +86,9 @@ void setup() {
   else {
     Serial.println("Connected to server!");
     // Make a HTTP request:
-    client.println("GET https://www.howsmyssl.com/a/check HTTP/1.0");
-    client.println("Host: www.howsmyssl.com");
+    client.println("GET /api/v1/order/?format=json&shipped=false&username=" + username + "&api_key=" + apiKey + " HTTP/1.1");
+    client.println("Host: www.tindie.com");
+    client.println("Content-Type: application/x-www-form-urlencoded");
     client.println("Connection: close");
     client.println();
 

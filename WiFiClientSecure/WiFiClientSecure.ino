@@ -33,7 +33,7 @@ TaskHandle_t LEDTask;
 CRGB leds[NUM_LEDS];
 #define BRIGHTNESS          10
 #define FRAMES_PER_SECOND  120
-uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+uint8_t gHue = 0; // rotating "base color"
 
 void setup() {
   //Initialize serial and wait for port to open:
@@ -145,6 +145,7 @@ void handleResponse() {
   }
   else {
     newOrders = false;
+    Serial.println("No new orders.");
   }
 
   errorState = false;
@@ -163,12 +164,12 @@ void LEDTaskcode (void * parameter) {
   // wait a bit before starting
   fill_solid(leds, NUM_LEDS, CRGB::Black);
   FastLED.show();
-  delay(2000);
+  FastLED.delay(2000);
   
   for(;;) {
     if (errorState) { // a red dot sweeping around, with fading trails
       fadeToBlackBy(leds, NUM_LEDS, 20);
-      uint16_t beatsaw = beat16( 30 /* BPM */);
+      uint16_t beatsaw = beat16( 50 /* BPM */);
       int pos = scale16( beatsaw, NUM_LEDS-1);
       leds[pos] += CRGB::Red;
     }

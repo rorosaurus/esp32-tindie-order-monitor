@@ -19,6 +19,10 @@ char json_string[512];
 StaticJsonBuffer<512> jsonBuffer;
 int length = 0;
 
+bool errorState = true;
+bool newOrders = false;
+long lastSuccessfulCheck = millis();
+
 void setup() {
   //Initialize serial and wait for port to open:
   Serial.begin(115200);
@@ -31,6 +35,12 @@ void loop() {
   checkForNewOrders();
 
   disconnectWifi(); // reconnect wifi on each attempt, easier than handling timeouts/leases/etc.
+
+  // are we having general connection issues? if so, indicate via errorState bool
+  if (millis() > lastSuccessfulCheck + (1000 * 60 * (MINUTES_INBETWEEN_CHECKS + 1))) {
+    errorState = true; // we haven't been able to connect the last two attempts
+  }
+  if (errorState) Serial.println("\n***Experiencing connection issues, please investigate!***\n");
 
   Serial.print("Waiting ");
   Serial.print(MINUTES_INBETWEEN_CHECKS);
@@ -72,9 +82,6 @@ void handleResponse() {
   // reset variables
   length = 0;
   json_string[0] = 0;
-//  for (int i=0; i < 512; i++) {
-//    json_string[i] = "";
-//  }
 
   while (client.connected()) {
     String line = client.readStringUntil('\n');
@@ -109,7 +116,15 @@ void handleResponse() {
     Serial.println("************************");
     Serial.println("**You have new orders!**");
     Serial.println("************************");
+
+    newOrders = true;
   }
+  else {
+    newOrders = false;
+  }
+
+  errorState = false;
+  lastSuccessfulCheck = millis();
 
   Serial.println("\nDisconnecting from server.");
   client.stop();

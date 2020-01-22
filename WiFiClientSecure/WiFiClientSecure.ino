@@ -55,10 +55,11 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Time to check for new orders!\n");
-  checkForNewOrders();
-
-  disconnectWifi(); // reconnect wifi on each attempt, easier than handling timeouts/leases/etc.
+  Serial.println("...Time to check for new orders!\n");
+  bool success = sendAPIRequest(); // ask the API if we have a new order
+  if (success) handleResponse();
+  
+  disconnect(); // reconnect to server + wifi on each attempt, easier than handling timeouts/leases/etc.
 
   // are we having general connection issues? if so, indicate via errorState bool
   if (millis() > lastSuccessfulCheck + (1000 * 60 * (MINUTES_INBETWEEN_CHECKS + 1))) {
@@ -68,26 +69,28 @@ void loop() {
 
   Serial.print("Waiting ");
   Serial.print(MINUTES_INBETWEEN_CHECKS);
-  Serial.println(" minutes, then checking again.");
+  Serial.println(" minutes, then checking again...");
   delay(1000 * 60 * MINUTES_INBETWEEN_CHECKS); // wait MINUTES_INBETWEEN_CHECKS minutes before trying again
 }
 
-void checkForNewOrders() {
+bool sendAPIRequest() { // bool represents success, true=request sent, false=some failure
   Serial.print("Attempting to connect to Wifi SSID: ");
   Serial.print(ssid);
   WiFi.begin(ssid, password);
 
   // attempt to connect to Wifi network:
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.println("...");
+    Serial.print("...");
     // wait 1 second for re-trying
     delay(1000);
   }
 
   Serial.println("Connected to Wifi!");
-  Serial.println("Starting connection to server...");
-  if (!client.connect(server, 443))
+  Serial.print("Starting connection to server...");
+  if (!client.connect(server, 443)) {
     Serial.println("Connection failed!");
+    return false;
+  }
   else {
     Serial.println("Connected to server!");
     Serial.println();
@@ -98,7 +101,7 @@ void checkForNewOrders() {
     client.println("Connection: close");
     client.println();
 
-    handleResponse();
+    return true;
   }
 }
 
@@ -134,30 +137,29 @@ void handleResponse() {
   Serial.println();
   
   int orders = root["meta"]["total_count"];
-  Serial.print("\nPending Orders: ");
-  Serial.println(orders);
-  Serial.println();
 
   if (orders > 0){
-    Serial.println("************************");
-    Serial.println("**You have new orders!**");
-    Serial.println("************************");
-
+    Serial.println("**************************");
+    Serial.print("**You have ");
+    Serial.println(orders);
+    Serial.println(" new orders!**");
+    Serial.println("**************************");
+    
     newOrders = true;
   }
   else {
     newOrders = false;
-    Serial.println("No new orders.");
+    Serial.println("No pending orders. :(");
   }
 
   errorState = false;
   lastSuccessfulCheck = millis();
-
-  Serial.println("\nDisconnecting from server.");
-  client.stop();
 }
 
-void disconnectWifi() {
+void disconnect() {
+  Serial.println("\nDisconnecting from server.");
+  client.stop();
+  
   WiFi.disconnect();
   Serial.println("Wifi disconnected.");
 }

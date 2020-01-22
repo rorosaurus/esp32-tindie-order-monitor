@@ -106,6 +106,7 @@ void handleResponse() {
   // reset variables
   length = 0;
   json_string[0] = 0;
+  jsonBuffer.clear();
 
   while (client.connected()) {
     String line = client.readStringUntil('\n');
@@ -121,15 +122,16 @@ void handleResponse() {
     char c = client.read();
     json_string[length] = c;
     length++;
-    Serial.write(c);
+//    Serial.write(c);
   }
-  Serial.println();
 
+  Serial.println(json_string);
   JsonObject& root = jsonBuffer.parseObject(json_string);
   if (!root.success()) {
     Serial.println(F("parseObject() failed"));
     return;
   }
+  Serial.println();
   
   int orders = root["meta"]["total_count"];
   Serial.print("\nPending Orders: ");

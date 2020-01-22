@@ -41,9 +41,6 @@ void setup() {
   delay(100);
   Serial.println();
 
-  FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(BRIGHTNESS);
-
   xTaskCreatePinnedToCore(
       LEDTaskcode, /* Function to implement the task */
       "LEDTask", /* Name of the task */
@@ -166,10 +163,11 @@ void disconnect() {
 
 void LEDTaskcode (void * parameter) {
   // wait a bit before starting
-  fill_solid(leds, NUM_LEDS, CRGB::Black);
-  FastLED.show();
-  FastLED.delay(2000);
+  delay(4000);
   
+  FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(BRIGHTNESS);
+   
   for(;;) {
     if (errorState) { // a red dot sweeping around, with fading trails
       fadeToBlackBy(leds, NUM_LEDS, 20);

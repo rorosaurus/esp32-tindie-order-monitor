@@ -16,8 +16,8 @@ const char*  server = "www.tindie.com";  // Server URL
 
 WiFiClientSecure client;
 
-char json_string[512];
-StaticJsonBuffer<512> jsonBuffer;
+char json_string[2048];
+StaticJsonBuffer<2048> jsonBuffer;
 int length = 0;
 
 bool errorState = true;
@@ -92,7 +92,7 @@ bool sendAPIRequest() { // bool represents success, true=request sent, false=som
     Serial.println("Connected to server!");
     Serial.println();
     // Make a HTTP request:
-    client.println("GET /api/v1/order/?format=json&shipped=false&username=" + username + "&api_key=" + apiKey + " HTTP/1.1");
+    client.println("GET /api/v1/order/?format=json&shipped=false&limit=1&username=" + username + "&api_key=" + apiKey + " HTTP/1.1");
     client.println("Host: www.tindie.com");
     client.println("Content-Type: application/x-www-form-urlencoded");
     client.println("Connection: close");
@@ -136,11 +136,9 @@ void handleResponse() {
   int orders = root["meta"]["total_count"];
 
   if (orders > 0){
-    Serial.println("**************************");
-    Serial.print("**You have ");
-    Serial.println(orders);
-    Serial.println(" new orders!**");
-    Serial.println("**************************");
+    Serial.println("**********************************");
+    Serial.println("**You have at least 1 new order!**");
+    Serial.println("**********************************");
     
     newOrders = true;
   }

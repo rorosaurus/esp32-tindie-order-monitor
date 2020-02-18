@@ -20,7 +20,7 @@ char json_string[2048];
 StaticJsonBuffer<2048> jsonBuffer;
 int length = 0;
 
-bool errorState = true;
+bool errorState = false;
 bool newOrders = false;
 long lastSuccessfulCheck = millis();
 

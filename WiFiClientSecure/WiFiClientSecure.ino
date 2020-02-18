@@ -68,6 +68,9 @@ void loop() {
   Serial.print(MINUTES_INBETWEEN_CHECKS);
   Serial.println(" minutes, then checking again...");
   delay(1000 * 60 * MINUTES_INBETWEEN_CHECKS); // wait MINUTES_INBETWEEN_CHECKS minutes before trying again
+
+  Serial.println("RESTARTING...");
+  ESP.restart(); // seems we are having some issues with running continuously, so let's just reset entirely
 }
 
 bool sendAPIRequest() { // bool represents success, true=request sent, false=some failure

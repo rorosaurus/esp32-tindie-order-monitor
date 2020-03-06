@@ -59,9 +59,10 @@ void loop() {
   disconnect(); // reconnect to server + wifi on each attempt, easier than handling timeouts/leases/etc.
 
   // are we having general connection issues? if so, indicate via errorState bool
-  if (millis() > lastSuccessfulCheck + (1000 * 60 * (MINUTES_INBETWEEN_CHECKS + 1))) {
-    errorState = true; // we haven't been able to connect the last two attempts
-  }
+//  if (millis() > lastSuccessfulCheck + (1000 * 60 * (MINUTES_INBETWEEN_CHECKS + 1))) {
+//    errorState = true; // we haven't been able to connect the last two attempts
+//  }
+  errorState = !success;
   if (errorState) Serial.println("\n***Experiencing connection issues, please investigate!***\n");
 
   Serial.print("Waiting ");
@@ -78,11 +79,17 @@ bool sendAPIRequest() { // bool represents success, true=request sent, false=som
   Serial.print(ssid);
   WiFi.begin(ssid, password);
 
+  long millisBefore = millis();
+
   // attempt to connect to Wifi network:
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print("...");
     // wait 1 second for re-trying
     delay(1000);
+    
+    if(millis() > millisBefore + 10000) { // timeout
+      break;
+    }
   }
 
   Serial.println("Connected to Wifi!");

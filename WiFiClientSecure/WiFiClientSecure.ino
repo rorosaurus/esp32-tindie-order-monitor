@@ -22,6 +22,7 @@ int length = 0;
 
 bool errorState = false;
 bool newOrders = false;
+int orders = 0;
 long lastSuccessfulCheck = millis();
 
 TaskHandle_t LEDTask;
@@ -143,11 +144,13 @@ void handleResponse() {
   }
   Serial.println();
   
-  int orders = root["meta"]["total_count"];
+  orders = root["meta"]["total_count"];
 
   if (orders > 0){
     Serial.println("**********************************");
-    Serial.println("**You have at least 1 new order!**");
+    Serial.print("**  You have ");
+    Serial.print(orders); 
+    Serial.println(" new orders!  **");
     Serial.println("**********************************");
     
     newOrders = true;
@@ -187,6 +190,14 @@ void LEDTaskcode (void * parameter) {
       fadeToBlackBy(leds, NUM_LEDS, 10);
       int pos = random16(NUM_LEDS);
       if(random8(2) == 0) leds[pos] += CHSV(gHue + random8(64), 200, 255);
+
+      // for 8/10 seconds, only light up the right num of LEDs to correspond to the number of unshipped orders
+      int removeLEDS = NUM_LEDS - orders;
+      if (removeLEDS > 0 && (millis()%10000 > 2000)) {
+        for (int i=0; i < removeLEDS; i++){
+          leds[(NUM_LEDS-1)-i] = CRGB::Black;
+        }
+      }
     }
     else {
       fadeToBlackBy(leds, NUM_LEDS, 10); // turn all the leds off
